@@ -3,18 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CMMS บันทึกการถอดอะไหล่ Inactive</title>
+  <title>CMMS บันทึกถอดอะไหล่ Inactive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #0f172a; }
-    iframe { border: none; width: 100%; height: 100%; }
+    * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+    body { background: #0f172a; color: #f8fafc; margin: 0; padding: 12px; }
+    .card { background: #1e293b; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); max-width: 480px; margin: auto; border: 1px solid #334155; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h3 { margin: 0; color: #38bdf8; font-size: 18px; font-weight: 600; }
+    .header p { margin: 4px 0 0; color: #94a3b8; font-size: 12px; }
+    .badge-donor { display: inline-block; background: #0369a1; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-top: 10px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 11px 13px; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; color: #ffffff; font-size: 14px; outline: none; }
+    input:focus, select:focus { border-color: #38bdf8; background: #1e293b; }
+    .btn { width: 100%; background: #0284c7; color: white; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    .btn:disabled { background: #475569; }
+    .success-box { display: none; text-align: center; padding: 25px 15px; background: #064e3b; border-radius: 12px; color: #6ee7b7; border: 1px solid #059669; }
   </style>
 </head>
 <body>
-  <iframe id="appFrame" src=""></iframe>
+  <div class="card">
+    <div class="header">
+      <h3>📋 แบบบันทึกถอดอะไหล่ Inactive</h3>
+      <p>CMMS Maintenance Machine Part Salvage</p>
+      <div class="badge-donor" id="donorBadge">กำลังโหลดข้อมูล...</div>
+    </div>
+
+    <div id="successBox" class="success-box">
+      <h3 style="margin-top:0; color:#34d399;">✅ บันทึกข้อมูลสำเร็จ!</h3>
+      <p style="font-size: 13px; color:#a7f3d0;">บันทึกรายการขึ้น Google Sheet เรียบร้อยแล้ว</p>
+      <button class="btn" style="background:#059669;" onclick="location.reload()">+ บันทึกเพิ่มอีกชิ้น</button>
+    </div>
+
+    <form id="salvageForm">
+      <div class="form-group">
+        <label>1. เครื่องจักรต้นทางที่ถูกถอด (Donor) *</label>
+        <select id="donorMachine" required></select>
+      </div>
+
+      <div class="form-group">
+        <label>2. รหัสอะไหล่ (Catalogue No.) *</label>
+        <input type="text" id="catalogueNo" placeholder="เช่น SF.CG-CS-VFT-004" required>
+      </div>
+
+      <div class="form-group">
+        <label>3. ชื่ออะไหล่ (Part Name / Description) *</label>
+        <input type="text" id="partName" placeholder="เช่น COLLET CHUCK 12 LEAF STD" required>
+      </div>
+
+      <div class="form-group">
+        <label>4. จำนวนที่ถอด (Qty) *</label>
+        <input type="number" id="qty" value="1" min="1" step="1" required>
+      </div>
+
+      <div class="form-group">
+        <label>5. นำไปใช้งานที่ไหน *</label>
+        <select id="destinationType" onchange="toggleDestination()">
+          <option value="INSTALL">ใส่เครื่องอื่นทันที (Active Machine)</option>
+          <option value="CABINET">เก็บเข้าตู้ Stock / ตู้สแปร์</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="targetMachineGroup">
+        <label>เครื่องจักรปลายทาง (Target Machine)</label>
+        <input type="text" id="targetMachine" placeholder="เช่น RX1-CG-SF-02">
+      </div>
+
+      <div class="form-group" id="targetWoGroup">
+        <label>เลขที่ใบงานซ่อม (Target WO No.)</label>
+        <input type="text" id="targetWo" placeholder="เช่น WO260908001 หรือ BMM26-XXXX">
+      </div>
+
+      <div class="form-group" id="cabinetLocationGroup" style="display:none;">
+        <label>ตำแหน่งตู้จัดเก็บ (Cabinet Location)</label>
+        <input type="text" id="cabinetLocation" placeholder="เช่น ตู้ Spare A ชั้น 2">
+      </div>
+
+      <div class="form-group">
+        <label>6. ช่างผู้ถอดอะไหล่ (Technician) *</label>
+        <select id="technicianName" required></select>
+      </div>
+
+      <button type="submit" class="btn" id="btnSubmit">💾 บันทึกข้อมูลขึ้นระบบ</button>
+    </form>
+  </div>
+
   <script>
-    var params = window.location.search;
-    var gasUrl = "https://script.google.com/macros/s/AKfycby1hBdguY0mGtpsUvoxt2DaJHx4eH6hiZFsbBOfrxKmzqDCHKs8e_DBiyuVvc_BIstg/exec";
-    document.getElementById("appFrame").src = gasUrl + params;
+    // 34 เครื่องจักร Inactive
+    var machines = [
+      'RX1-CG-SF-10', 'RX1-CG-SF-11', 'RX1-CG-SF-12', 'RX1-CG-SF-13', 'RX1-CG-SF-14',
+      'RX1-CG-SF-15', 'RX1-CG-SF-18', 'RX1-CG-SF-36', 'RX1-CG-SF-37', 'RX1-CG-SF-38',
+      'RX1-CG-SF-41', 'RX1-CG-SF-42', 'RX1-CG-SF-44', 'RX1-CG-SF-45', 'RX1-CG-SF-46',
+      'RX1-CG-SF-55', 'RX1-CG-SF-56', 'RX1-CG-SF-62T', 'RX1-MBLOCK-SF-06', 'RX1-MBLOCK-SF-07',
+      'RX1-MBLOCK-SF-08', 'RX1-MBLOCK-SF-09', 'RX1-MBLOCK-SF-18', 'RX2-ARC100-SF-01',
+      'RX2-ARC100-SF-02', 'RX2-ARC100-SF-03', 'RX2-ARC100-SF-04', 'RX2-CG-SF-34',
+      'RX2-PMD.MODULO-SF-01', 'RX2-PMD.MODULO-SF-02', 'RX2-PMP-SF-01', 'RX2-PMP-SF-02',
+      'RX2-PMP-SF-06', 'RXE-ABLOCK-SF-01'
+    ];
+
+    // รายชื่อช่างหน้างาน
+    var techs = [
+      'SOMCHAI JAIDEE', 'NANTASIT KAEWMEESEE', 'ANUCHIT YOLAO', 'KITTI SOMSRI', 
+      'RATTANAT', 'AEED', 'ART', 'PIE', 'TEEE'
+    ];
+
+    // อ่านค่า ?donor= จาก URL
+    var urlParams = new URLSearchParams(window.location.search);
+    var preselectedDonor = urlParams.get('donor') || '';
+
+    // สร้าง Dropdown เครื่อง
+    var selM = document.getElementById('donorMachine');
+    selM.innerHTML = '<option value="">-- เลือกเครื่องจักร --</option>';
+    machines.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m;
+      opt.text = m;
+      if (m === preselectedDonor) opt.selected = true;
+      selM.appendChild(opt);
+    });
+
+    document.getElementById('donorBadge').innerText = preselectedDonor ? ("เครื่อง: " + preselectedDonor) : "กรุณาเลือกเครื่อง";
+
+    selM.addEventListener('change', function() {
+      document.getElementById('donorBadge').innerText = this.value ? ("เครื่อง: " + this.value) : "กรุณาเลือกเครื่อง";
+    });
+
+    // สร้าง Dropdown ช่าง
+    var selT = document.getElementById('technicianName');
+    selT.innerHTML = '<option value="">-- เลือกชื่อช่าง --</option>';
+    techs.forEach(function(t) {
+      var opt = document.createElement('option');
+      opt.value = t;
+      opt.text = t;
+      selT.appendChild(opt);
+    });
+
+    function toggleDestination() {
+      var type = document.getElementById('destinationType').value;
+      document.getElementById('targetMachineGroup').style.display = type === 'CABINET' ? 'none' : 'block';
+      document.getElementById('targetWoGroup').style.display = type === 'CABINET' ? 'none' : 'block';
+      document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
+    }
+
+    // ฟังก์ชันส่งข้อมูลไปยัง Google Apps Script
+    document.getElementById('salvageForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerText = '⏳ กำลังบันทึกข้อมูล...';
+
+      var data = {
+        donorMachine: document.getElementById('donorMachine').value,
+        catalogueNo: document.getElementById('catalogueNo').value,
+        partName: document.getElementById('partName').value,
+        qty: document.getElementById('qty').value,
+        destinationType: document.getElementById('destinationType').value,
+        targetMachine: document.getElementById('targetMachine').value,
+        targetWo: document.getElementById('targetWo').value,
+        cabinetLocation: document.getElementById('cabinetLocation').value,
+        technicianName: document.getElementById('technicianName').value
+      };
+
+      var scriptUrl = "https://script.google.com/macros/s/AKfycby1hBdguY0mGtpsUvoxt2DaJHx4eH6hiZFsbBOfrxKmzqDCHKs8e_DBiyuVvc_BIstg/exec";
+
+      fetch(scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(function() {
+        document.getElementById('salvageForm').style.display = 'none';
+        document.getElementById('successBox').style.display = 'block';
+      }).catch(function(err) {
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + err);
+        btn.disabled = false;
+        btn.innerText = '💾 บันทึกข้อมูลขึ้นระบบ';
+      });
+    });
   </script>
 </body>
 </html>
