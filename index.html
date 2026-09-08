@@ -13,15 +13,21 @@
     .header h3 { margin: 0; color: #38bdf8; font-size: 19px; font-weight: 700; }
     .header p { margin: 4px 0 0; color: #94a3b8; font-size: 12px; }
     .badge-donor { display: inline-block; background: #0369a1; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-top: 10px; }
-    .form-group { margin-bottom: 14px; }
+    .form-group { margin-bottom: 14px; position: relative; }
     label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 5px; }
     input, select { width: 100%; padding: 11px 13px; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; color: #ffffff; font-size: 14px; outline: none; transition: 0.2s; }
     input:focus, select:focus { border-color: #38bdf8; background: #1e293b; }
     
+    /* กล่องผลลัพธ์การค้นหา Auto-complete */
+    .search-results { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid #38bdf8; border-radius: 10px; max-height: 220px; overflow-y: auto; z-index: 99; box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
+    .search-item { padding: 10px 12px; border-bottom: 1px solid #334155; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; }
+    .search-item:hover { background: #0284c7; }
+    .search-item:last-child { border-bottom: none; }
+    
     /* กล่องแสดงรูปตัวอย่างอะไหล่ */
-    .part-preview-box { display: none; margin-top: 10px; padding: 10px; background: #0f172a; border-radius: 12px; border: 1px solid #38bdf8; text-align: center; }
-    .part-preview-img { max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: contain; background: white; padding: 4px; }
-    .part-preview-desc { font-size: 12px; color: #38bdf8; font-weight: 600; margin-top: 6px; }
+    .part-preview-box { display: none; margin-top: 10px; padding: 12px; background: #0f172a; border-radius: 12px; border: 1.5px solid #0284c7; text-align: center; }
+    .part-preview-img { max-width: 100%; max-height: 200px; border-radius: 8px; object-fit: contain; background: white; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .part-preview-desc { font-size: 13px; color: #38bdf8; font-weight: 700; margin-top: 8px; }
 
     .btn { width: 100%; background: #0284c7; color: white; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
     .btn:active { background: #0369a1; }
@@ -50,11 +56,15 @@
         <select id="donorMachine" required onchange="onDonorChange()"></select>
       </div>
 
-      <!-- 2 & 3. เลือกอะไหล่ (Dropdown + มีรูป) -->
+      <!-- 2. ค้นหาอะไหล่ (มี 3,000+ Part ให้พิมพ์ค้นหาได้ทันที) -->
       <div class="form-group">
-        <label>🔧 2. เลือกอะไหล่ที่ถอด (Catalogue No. / Name) *</label>
-        <select id="partSelect" required onchange="onPartChange()"></select>
-        
+        <label>🔍 2. ค้นหารหัส / ชื่ออะไหล่ที่ถอด (Part Search) *</label>
+        <input type="text" id="partSearchInput" placeholder="พิมพ์ค้นหา เช่น VFT, COLLET, VALVE, FESTO..." autocomplete="off" oninput="filterParts()">
+        <input type="hidden" id="catalogueNo" required>
+        <input type="hidden" id="partName" required>
+
+        <div id="searchResults" class="search-results"></div>
+
         <!-- กล่องแสดงรูปอะไหล่ -->
         <div id="partPreviewBox" class="part-preview-box">
           <img id="partPreviewImg" class="part-preview-img" src="" alt="Part Preview">
@@ -62,7 +72,7 @@
         </div>
       </div>
 
-      <!-- 4. จำนวนที่ถอด -->
+      <!-- 3. จำนวนที่ถอด -->
       <div class="form-group">
         <label>🔢 3. จำนวนที่ถอด (Qty) *</label>
         <select id="qty" required>
@@ -75,7 +85,7 @@
         </select>
       </div>
 
-      <!-- 5. ปลายทาง -->
+      <!-- 4. ปลายทาง -->
       <div class="form-group">
         <label>🎯 4. นำไปใช้งานที่ไหน *</label>
         <select id="destinationType" onchange="toggleDestination()">
@@ -84,7 +94,7 @@
         </select>
       </div>
 
-      <!-- เลือกเครื่องปลายทางแบบ Dropdown -->
+      <!-- เลือกเครื่องปลายทาง -->
       <div class="form-group" id="targetMachineGroup">
         <label>เครื่องจักรปลายทาง (Target Machine)</label>
         <select id="targetMachine"></select>
@@ -96,7 +106,7 @@
         <input type="text" id="targetWo" placeholder="เช่น BMM26-XXXX หรือ WO26XXXX">
       </div>
 
-      <!-- เลือกตู้เก็บแบบ Dropdown -->
+      <!-- เลือกตู้เก็บ -->
       <div class="form-group" id="cabinetLocationGroup" style="display:none;">
         <label>เลือกตู้จัดเก็บ (Cabinet Location)</label>
         <select id="cabinetLocation">
@@ -107,7 +117,7 @@
         </select>
       </div>
 
-      <!-- 6. ช่างผู้ถอด -->
+      <!-- 5. ช่างผู้ถอด (แยกกลุ่มแผนกชัดเจน) -->
       <div class="form-group">
         <label>👤 5. ช่างผู้ถอดอะไหล่ (Technician) *</label>
         <select id="technicianName" required></select>
@@ -118,7 +128,7 @@
   </div>
 
   <script>
-    // 34 เครื่องจักร Inactive
+    // รายชื่อ 34 เครื่อง Inactive
     var donorMachines = [
       'RX1-CG-SF-10', 'RX1-CG-SF-11', 'RX1-CG-SF-12', 'RX1-CG-SF-13', 'RX1-CG-SF-14',
       'RX1-CG-SF-15', 'RX1-CG-SF-18', 'RX1-CG-SF-36', 'RX1-CG-SF-37', 'RX1-CG-SF-38',
@@ -130,7 +140,7 @@
       'RX2-PMP-SF-06', 'RXE-ABLOCK-SF-01'
     ];
 
-    // รายชื่อเครื่องจักรปลายทาง (Active Machines ยอดนิยม)
+    // รายชื่อเครื่อง Active ปลายทาง
     var targetMachines = [
       'RX1-CG-SF-01', 'RX1-CG-SF-02', 'RX1-CG-SF-03', 'RX1-CG-SF-04', 'RX1-CG-SF-05',
       'RX1-CG-SF-06', 'RX1-CG-SF-07', 'RX1-CG-SF-08', 'RX1-CG-SF-09', 'RX1-CG-SF-16',
@@ -140,14 +150,27 @@
       'เครื่องอื่นๆ (ระบุใน WO)'
     ];
 
-    // รายชื่อช่างหน้างาน (เฉพาะ Technician)
-    var techs = [
-      'SOMCHAI JAIDEE', 'NANTASIT KAEWMEESEE', 'ANUCHIT YOLAO', 'KITTI SOMSRI', 
-      'RATTANAT', 'AEED', 'ART', 'PIE', 'TEEE'
-    ];
+    // รายชื่อช่างจัดกลุ่มตามแผนก
+    var technicianGroups = {
+      "Site: RX1-Surface": [
+        "BUNTAN MANJIT", "CHAIPICHIT LEUSAN", "CHATREE CHANKASEM", "CHUKIAT PIKULKAW", "KITTISAK TAWEE", "SOMCHAI JAIDEE", "NANTASIT KAEWMEESEE"
+      ],
+      "Site: RX2-Surface": [
+        "AMARIN SRIPARN", "CHARIN PUEK-NGAM", "CHATCHAWAN PUNYARAT", "DAW WANNAKAN", "DOKRANG NOYNA"
+      ],
+      "Site: RX3-Surface": [
+        "ADISORN JIT-AKA", "EKKALUCK WANGSEWKLANG", "PANJA PAKKOTANANG", "PONGSAK TIPPANAS", "PRASERT AEAMJIT"
+      ],
+      "แผนก TINT (รวมทุกโรงงาน)": [
+        "CHAMNAN NANUDORN", "CHARAN THAPPAN", "NATTAPHON PHONHAN", "SURIYAPONG CHAIYA", "TOSSAPON WONGCHANTEUK"
+      ],
+      "แผนก HELP & FINAL (รวมทุกโรงงาน)": [
+        "ANUCHIT YOLAO", "APISIT PRATUMWONG", "APIWATT PRABUNREUNG", "NOPPON HOMSUK", "PAPHAWIN CHUAPHEANG", "KITTI SOMSRI"
+      ]
+    };
 
-    // ฐานข้อมูลอะไหล่ที่พบบ่อย พร้อมรูปลิงก์จาก Schneider Catalog
-    var partsCatalog = [
+    // ฐานข้อมูลอะไหล่จาก Schneider Catalog
+    var catalogParts = [
       { cat: "SF.CG-CS-VFT-004", name: "COLLET CHUCK 12 LEAF STD FOR VFT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-004.jpg" },
       { cat: "SF.CG-CS-VFT-002", name: "COLLET CHUCK 12 LEAF CARBIDE FOR VFT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-002.jpg" },
       { cat: "SF.CG-CS-VFT-001", name: "CHUCK BODY VFT-ORBIT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-001.jpg" },
@@ -155,14 +178,19 @@
       { cat: "SF.MB-VALVE-001", name: "SOLENOID VALVE 5/2 WAY SMC", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.MB-VALVE-001.jpg" },
       { cat: "SF.MB-CYL-002", name: "CLAMPING CYLINDER FESTO", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.MB-CYL-002.jpg" },
       { cat: "SF.PMP-PAD-001", name: "POLISHING PAD CARRIER CCP", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.PMP-PAD-001.jpg" },
-      { cat: "SF.GEN-SENSOR-001", name: "PROXIMITY SENSOR OMRON", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.GEN-SENSOR-001.jpg" },
-      { cat: "OTHER", name: "อะไหล่อื่นๆ (ไม่ได้อยู่ในรายการ)", img: "" }
+      { cat: "SF.GEN-SENSOR-001", name: "PROXIMITY SENSOR OMRON", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.GEN-SENSOR-001.jpg" }
     ];
+
+    // โหลดไฟล์แคตตาล็อกอะไหล่เพิ่มเติมทั้งหมด
+    fetch("https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/parts_data.json")
+      .then(r => r.json())
+      .then(data => { if(Array.isArray(data)) catalogParts = data; })
+      .catch(() => {});
 
     var urlParams = new URLSearchParams(window.location.search);
     var preselectedDonor = urlParams.get('donor') || '';
 
-    // 1. ใส่ Donor Machine
+    // 1. Donor Dropdown
     var selD = document.getElementById('donorMachine');
     selD.innerHTML = '<option value="">-- เลือกเครื่องต้นทาง --</option>';
     donorMachines.forEach(function(m) {
@@ -178,34 +206,53 @@
       document.getElementById('donorBadge').innerText = val ? ("เครื่อง: " + val) : "กรุณาเลือกเครื่อง";
     }
 
-    // 2. ใส่ Part Dropdown
-    var selP = document.getElementById('partSelect');
-    selP.innerHTML = '<option value="">-- เลือกอะไหล่ที่ถอด --</option>';
-    partsCatalog.forEach(function(p, idx) {
-      var opt = document.createElement('option');
-      opt.value = idx;
-      opt.text = p.cat + " : " + p.name;
-      selP.appendChild(opt);
-    });
+    // 2. ระบบค้นหาอะไหล่ Auto-search
+    function filterParts() {
+      var q = document.getElementById('partSearchInput').value.trim().toUpperCase();
+      var box = document.getElementById('searchResults');
+      if (!q) { box.style.display = 'none'; return; }
 
-    function onPartChange() {
-      var idx = selP.value;
-      var previewBox = document.getElementById('partPreviewBox');
-      var previewImg = document.getElementById('partPreviewImg');
-      var previewDesc = document.getElementById('partPreviewDesc');
+      var matches = catalogParts.filter(function(p) {
+        return p.cat.toUpperCase().includes(q) || (p.name && p.name.toUpperCase().includes(q));
+      }).slice(0, 15);
 
-      if (idx !== "" && partsCatalog[idx]) {
-        var p = partsCatalog[idx];
-        previewDesc.innerText = p.cat + " — " + p.name;
-        // กรณีมีรูปจะแสดง ถ้าไม่มีจะแสดง placeholder สวยๆ
-        previewImg.src = p.img || "https://dummyimage.com/300x180/1e293b/38bdf8.png&text=" + encodeURIComponent(p.cat);
-        previewBox.style.display = 'block';
+      if (matches.length === 0) {
+        box.innerHTML = '<div class="search-item" onclick="selectCustomPart(\'' + q + '\')">➕ ใช้อะไหล่รหัส: "' + q + '" (นอกแคตตาล็อก)</div>';
       } else {
-        previewBox.style.display = 'none';
+        box.innerHTML = matches.map(function(p, i) {
+          return '<div class="search-item" onclick="selectPart(' + i + ')">' +
+                 '<div><strong>' + p.cat + '</strong><br><span style="font-size:11px;color:#94a3b8;">' + (p.name || '') + '</span></div>' +
+                 '<span style="color:#38bdf8;">เลือก ➔</span></div>';
+        }).join('');
       }
+      box.style.display = 'block';
     }
 
-    // 3. ใส่ Target Machine Dropdown
+    function selectPart(idx) {
+      var p = catalogParts[idx];
+      document.getElementById('partSearchInput').value = p.cat + ' : ' + (p.name || '');
+      document.getElementById('catalogueNo').value = p.cat;
+      document.getElementById('partName').value = p.name || p.cat;
+      document.getElementById('searchResults').style.display = 'none';
+
+      // แสดงรูปภาพอะไหล่
+      var imgBox = document.getElementById('partPreviewBox');
+      var img = document.getElementById('partPreviewImg');
+      var desc = document.getElementById('partPreviewDesc');
+      desc.innerText = p.cat + ' ' + (p.name ? ('— ' + p.name) : '');
+      img.src = p.img || ("https://dummyimage.com/300x180/0f172a/38bdf8.png&text=" + encodeURIComponent(p.cat));
+      imgBox.style.display = 'block';
+    }
+
+    function selectCustomPart(customCat) {
+      document.getElementById('partSearchInput').value = customCat;
+      document.getElementById('catalogueNo').value = customCat;
+      document.getElementById('partName').value = customCat;
+      document.getElementById('searchResults').style.display = 'none';
+      document.getElementById('partPreviewBox').style.display = 'none';
+    }
+
+    // 3. Target Machine Dropdown
     var selTM = document.getElementById('targetMachine');
     selTM.innerHTML = '<option value="">-- เลือกเครื่องปลายทาง --</option>';
     targetMachines.forEach(function(m) {
@@ -214,14 +261,19 @@
       selTM.appendChild(opt);
     });
 
-    // 4. ใส่ Technician Dropdown
+    // 4. Technician Grouped Dropdown
     var selT = document.getElementById('technicianName');
-    selT.innerHTML = '<option value="">-- เลือกชื่อช่าง --</option>';
-    techs.forEach(function(t) {
-      var opt = document.createElement('option');
-      opt.value = t; opt.text = t;
-      selT.appendChild(opt);
-    });
+    selT.innerHTML = '<option value="">-- เลือกชื่อช่างผู้ถอด --</option>';
+    for (var group in technicianGroups) {
+      var optGroup = document.createElement('optgroup');
+      optGroup.label = "🏢 " + group;
+      technicianGroups[group].forEach(function(name) {
+        var opt = document.createElement('option');
+        opt.value = name; opt.text = "👤 " + name;
+        optGroup.appendChild(opt);
+      });
+      selT.appendChild(optGroup);
+    }
 
     function toggleDestination() {
       var type = document.getElementById('destinationType').value;
@@ -230,20 +282,17 @@
       document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
     }
 
-    // ส่งข้อมูล
+    // บันทึกข้อมูล
     document.getElementById('salvageForm').addEventListener('submit', function(e) {
       e.preventDefault();
       var btn = document.getElementById('btnSubmit');
       btn.disabled = true;
       btn.innerText = '⏳ กำลังบันทึกข้อมูล...';
 
-      var partIdx = document.getElementById('partSelect').value;
-      var selectedPart = partsCatalog[partIdx] || { cat: "-", name: "-" };
-
       var data = {
         donorMachine: document.getElementById('donorMachine').value,
-        catalogueNo: selectedPart.cat,
-        partName: selectedPart.name,
+        catalogueNo: document.getElementById('catalogueNo').value || document.getElementById('partSearchInput').value,
+        partName: document.getElementById('partName').value || document.getElementById('partSearchInput').value,
         qty: document.getElementById('qty').value,
         destinationType: document.getElementById('destinationType').value,
         targetMachine: document.getElementById('targetMachine').value,
@@ -263,7 +312,7 @@
         document.getElementById('salvageForm').style.display = 'none';
         document.getElementById('successBox').style.display = 'block';
       }).catch(function(err) {
-        alert("เกิดข้อผิดพลาด: " + err);
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + err);
         btn.disabled = false;
         btn.innerText = '💾 บันทึกข้อมูลขึ้นระบบ';
       });
