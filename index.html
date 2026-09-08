@@ -4,20 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CMMS บันทึกถอดอะไหล่ Inactive</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
     body { background: #0f172a; color: #f8fafc; margin: 0; padding: 12px; }
     .card { background: #1e293b; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); max-width: 480px; margin: auto; border: 1px solid #334155; }
-    .header { text-align: center; margin-bottom: 20px; }
-    .header h3 { margin: 0; color: #38bdf8; font-size: 18px; font-weight: 600; }
+    .header { text-align: center; margin-bottom: 18px; }
+    .header h3 { margin: 0; color: #38bdf8; font-size: 19px; font-weight: 700; }
     .header p { margin: 4px 0 0; color: #94a3b8; font-size: 12px; }
     .badge-donor { display: inline-block; background: #0369a1; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-top: 10px; }
     .form-group { margin-bottom: 14px; }
-    label { display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 11px 13px; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; color: #ffffff; font-size: 14px; outline: none; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 11px 13px; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; color: #ffffff; font-size: 14px; outline: none; transition: 0.2s; }
     input:focus, select:focus { border-color: #38bdf8; background: #1e293b; }
-    .btn { width: 100%; background: #0284c7; color: white; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    
+    /* กล่องแสดงรูปตัวอย่างอะไหล่ */
+    .part-preview-box { display: none; margin-top: 10px; padding: 10px; background: #0f172a; border-radius: 12px; border: 1px solid #38bdf8; text-align: center; }
+    .part-preview-img { max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: contain; background: white; padding: 4px; }
+    .part-preview-desc { font-size: 12px; color: #38bdf8; font-weight: 600; margin-top: 6px; }
+
+    .btn { width: 100%; background: #0284c7; color: white; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+    .btn:active { background: #0369a1; }
     .btn:disabled { background: #475569; cursor: not-allowed; }
     .success-box { display: none; text-align: center; padding: 25px 15px; background: #064e3b; border-radius: 12px; color: #6ee7b7; border: 1px solid #059669; }
   </style>
@@ -37,51 +44,72 @@
     </div>
 
     <form id="salvageForm">
+      <!-- 1. เครื่องจักรต้นทาง -->
       <div class="form-group">
-        <label>1. เครื่องจักรต้นทางที่ถูกถอด (Donor) *</label>
-        <select id="donorMachine" required></select>
+        <label>📍 1. เครื่องจักรต้นทางที่ถูกถอด (Donor) *</label>
+        <select id="donorMachine" required onchange="onDonorChange()"></select>
       </div>
 
+      <!-- 2 & 3. เลือกอะไหล่ (Dropdown + มีรูป) -->
       <div class="form-group">
-        <label>2. รหัสอะไหล่ (Catalogue No.) *</label>
-        <input type="text" id="catalogueNo" placeholder="เช่น SF.CG-CS-VFT-004" required>
+        <label>🔧 2. เลือกอะไหล่ที่ถอด (Catalogue No. / Name) *</label>
+        <select id="partSelect" required onchange="onPartChange()"></select>
+        
+        <!-- กล่องแสดงรูปอะไหล่ -->
+        <div id="partPreviewBox" class="part-preview-box">
+          <img id="partPreviewImg" class="part-preview-img" src="" alt="Part Preview">
+          <div id="partPreviewDesc" class="part-preview-desc"></div>
+        </div>
       </div>
 
+      <!-- 4. จำนวนที่ถอด -->
       <div class="form-group">
-        <label>3. ชื่ออะไหล่ (Part Name / Description) *</label>
-        <input type="text" id="partName" placeholder="เช่น COLLET CHUCK 12 LEAF STD" required>
-      </div>
-
-      <div class="form-group">
-        <label>4. จำนวนที่ถอด (Qty) *</label>
-        <input type="number" id="qty" value="1" min="1" step="1" required>
-      </div>
-
-      <div class="form-group">
-        <label>5. นำไปใช้งานที่ไหน *</label>
-        <select id="destinationType" onchange="toggleDestination()">
-          <option value="INSTALL">ใส่เครื่องอื่นทันที (Active Machine)</option>
-          <option value="CABINET">เก็บเข้าตู้ Stock / ตู้สแปร์</option>
+        <label>🔢 3. จำนวนที่ถอด (Qty) *</label>
+        <select id="qty" required>
+          <option value="1">1 ชิ้น (PCS)</option>
+          <option value="2">2 ชิ้น (PCS)</option>
+          <option value="3">3 ชิ้น (PCS)</option>
+          <option value="4">4 ชิ้น (PCS)</option>
+          <option value="5">5 ชิ้น (PCS)</option>
+          <option value="10">10 ชิ้น (PCS)</option>
         </select>
       </div>
 
+      <!-- 5. ปลายทาง -->
+      <div class="form-group">
+        <label>🎯 4. นำไปใช้งานที่ไหน *</label>
+        <select id="destinationType" onchange="toggleDestination()">
+          <option value="INSTALL">ใส่เครื่องจักรใช้งานทันที (Active Machine)</option>
+          <option value="CABINET">เก็บเข้าตู้ Stock / ตู้สแปร์ (Spare Cabinet)</option>
+        </select>
+      </div>
+
+      <!-- เลือกเครื่องปลายทางแบบ Dropdown -->
       <div class="form-group" id="targetMachineGroup">
         <label>เครื่องจักรปลายทาง (Target Machine)</label>
-        <input type="text" id="targetMachine" placeholder="เช่น RX1-CG-SF-02">
+        <select id="targetMachine"></select>
       </div>
 
+      <!-- เลขที่ใบงานซ่อม -->
       <div class="form-group" id="targetWoGroup">
-        <label>เลขที่ใบงานซ่อม (Target WO No.)</label>
-        <input type="text" id="targetWo" placeholder="เช่น WO260908001 หรือ BMM26-XXXX">
+        <label>เลขที่ใบงานซ่อม (WO No. / BMM No.)</label>
+        <input type="text" id="targetWo" placeholder="เช่น BMM26-XXXX หรือ WO26XXXX">
       </div>
 
+      <!-- เลือกตู้เก็บแบบ Dropdown -->
       <div class="form-group" id="cabinetLocationGroup" style="display:none;">
-        <label>ตำแหน่งตู้จัดเก็บ (Cabinet Location)</label>
-        <input type="text" id="cabinetLocation" placeholder="เช่น ตู้ Spare A ชั้น 2">
+        <label>เลือกตู้จัดเก็บ (Cabinet Location)</label>
+        <select id="cabinetLocation">
+          <option value="ตู้ Spare A (RX1)">ตู้ Spare A (RX1)</option>
+          <option value="ตู้ Spare B (RX1)">ตู้ Spare B (RX1)</option>
+          <option value="ตู้ Spare Main (RX2)">ตู้ Spare Main (RX2)</option>
+          <option value="ตู้ชั้นวางอะไหล่ถอดรอตรวจ">ตู้ชั้นวางอะไหล่ถอดรอตรวจ</option>
+        </select>
       </div>
 
+      <!-- 6. ช่างผู้ถอด -->
       <div class="form-group">
-        <label>6. ช่างผู้ถอดอะไหล่ (Technician) *</label>
+        <label>👤 5. ช่างผู้ถอดอะไหล่ (Technician) *</label>
         <select id="technicianName" required></select>
       </div>
 
@@ -90,7 +118,8 @@
   </div>
 
   <script>
-    var machines = [
+    // 34 เครื่องจักร Inactive
+    var donorMachines = [
       'RX1-CG-SF-10', 'RX1-CG-SF-11', 'RX1-CG-SF-12', 'RX1-CG-SF-13', 'RX1-CG-SF-14',
       'RX1-CG-SF-15', 'RX1-CG-SF-18', 'RX1-CG-SF-36', 'RX1-CG-SF-37', 'RX1-CG-SF-38',
       'RX1-CG-SF-41', 'RX1-CG-SF-42', 'RX1-CG-SF-44', 'RX1-CG-SF-45', 'RX1-CG-SF-46',
@@ -101,36 +130,96 @@
       'RX2-PMP-SF-06', 'RXE-ABLOCK-SF-01'
     ];
 
+    // รายชื่อเครื่องจักรปลายทาง (Active Machines ยอดนิยม)
+    var targetMachines = [
+      'RX1-CG-SF-01', 'RX1-CG-SF-02', 'RX1-CG-SF-03', 'RX1-CG-SF-04', 'RX1-CG-SF-05',
+      'RX1-CG-SF-06', 'RX1-CG-SF-07', 'RX1-CG-SF-08', 'RX1-CG-SF-09', 'RX1-CG-SF-16',
+      'RX1-CG-SF-17', 'RX1-CG-SF-19', 'RX1-CG-SF-20', 'RX1-MBLOCK-SF-01', 'RX1-MBLOCK-SF-02',
+      'RX1-MBLOCK-SF-03', 'RX1-MBLOCK-SF-04', 'RX1-MBLOCK-SF-05', 'RX2-CG-SF-21',
+      'RX2-CG-SF-22', 'RX2-CG-SF-23', 'RX2-ARC100-SF-05', 'RX2-PMP-SF-03', 'RX2-PMP-SF-04',
+      'เครื่องอื่นๆ (ระบุใน WO)'
+    ];
+
+    // รายชื่อช่างหน้างาน (เฉพาะ Technician)
     var techs = [
       'SOMCHAI JAIDEE', 'NANTASIT KAEWMEESEE', 'ANUCHIT YOLAO', 'KITTI SOMSRI', 
       'RATTANAT', 'AEED', 'ART', 'PIE', 'TEEE'
     ];
 
+    // ฐานข้อมูลอะไหล่ที่พบบ่อย พร้อมรูปลิงก์จาก Schneider Catalog
+    var partsCatalog = [
+      { cat: "SF.CG-CS-VFT-004", name: "COLLET CHUCK 12 LEAF STD FOR VFT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-004.jpg" },
+      { cat: "SF.CG-CS-VFT-002", name: "COLLET CHUCK 12 LEAF CARBIDE FOR VFT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-002.jpg" },
+      { cat: "SF.CG-CS-VFT-001", name: "CHUCK BODY VFT-ORBIT", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-CS-VFT-001.jpg" },
+      { cat: "SF.CG-TOOL-001", name: "MILLING TOOL PCD D60", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.CG-TOOL-001.jpg" },
+      { cat: "SF.MB-VALVE-001", name: "SOLENOID VALVE 5/2 WAY SMC", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.MB-VALVE-001.jpg" },
+      { cat: "SF.MB-CYL-002", name: "CLAMPING CYLINDER FESTO", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.MB-CYL-002.jpg" },
+      { cat: "SF.PMP-PAD-001", name: "POLISHING PAD CARRIER CCP", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.PMP-PAD-001.jpg" },
+      { cat: "SF.GEN-SENSOR-001", name: "PROXIMITY SENSOR OMRON", img: "https://raw.githubusercontent.com/Monkii-D-Luffy/part-salvage/main/images/SF.GEN-SENSOR-001.jpg" },
+      { cat: "OTHER", name: "อะไหล่อื่นๆ (ไม่ได้อยู่ในรายการ)", img: "" }
+    ];
+
     var urlParams = new URLSearchParams(window.location.search);
     var preselectedDonor = urlParams.get('donor') || '';
 
-    var selM = document.getElementById('donorMachine');
-    selM.innerHTML = '<option value="">-- เลือกเครื่องจักร --</option>';
-    machines.forEach(function(m) {
+    // 1. ใส่ Donor Machine
+    var selD = document.getElementById('donorMachine');
+    selD.innerHTML = '<option value="">-- เลือกเครื่องต้นทาง --</option>';
+    donorMachines.forEach(function(m) {
       var opt = document.createElement('option');
-      opt.value = m;
-      opt.text = m;
+      opt.value = m; opt.text = m;
       if (m === preselectedDonor) opt.selected = true;
-      selM.appendChild(opt);
+      selD.appendChild(opt);
+    });
+    onDonorChange();
+
+    function onDonorChange() {
+      var val = selD.value || preselectedDonor;
+      document.getElementById('donorBadge').innerText = val ? ("เครื่อง: " + val) : "กรุณาเลือกเครื่อง";
+    }
+
+    // 2. ใส่ Part Dropdown
+    var selP = document.getElementById('partSelect');
+    selP.innerHTML = '<option value="">-- เลือกอะไหล่ที่ถอด --</option>';
+    partsCatalog.forEach(function(p, idx) {
+      var opt = document.createElement('option');
+      opt.value = idx;
+      opt.text = p.cat + " : " + p.name;
+      selP.appendChild(opt);
     });
 
-    document.getElementById('donorBadge').innerText = preselectedDonor ? ("เครื่อง: " + preselectedDonor) : "กรุณาเลือกเครื่อง";
+    function onPartChange() {
+      var idx = selP.value;
+      var previewBox = document.getElementById('partPreviewBox');
+      var previewImg = document.getElementById('partPreviewImg');
+      var previewDesc = document.getElementById('partPreviewDesc');
 
-    selM.addEventListener('change', function() {
-      document.getElementById('donorBadge').innerText = this.value ? ("เครื่อง: " + this.value) : "กรุณาเลือกเครื่อง";
+      if (idx !== "" && partsCatalog[idx]) {
+        var p = partsCatalog[idx];
+        previewDesc.innerText = p.cat + " — " + p.name;
+        // กรณีมีรูปจะแสดง ถ้าไม่มีจะแสดง placeholder สวยๆ
+        previewImg.src = p.img || "https://dummyimage.com/300x180/1e293b/38bdf8.png&text=" + encodeURIComponent(p.cat);
+        previewBox.style.display = 'block';
+      } else {
+        previewBox.style.display = 'none';
+      }
+    }
+
+    // 3. ใส่ Target Machine Dropdown
+    var selTM = document.getElementById('targetMachine');
+    selTM.innerHTML = '<option value="">-- เลือกเครื่องปลายทาง --</option>';
+    targetMachines.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.text = m;
+      selTM.appendChild(opt);
     });
 
+    // 4. ใส่ Technician Dropdown
     var selT = document.getElementById('technicianName');
     selT.innerHTML = '<option value="">-- เลือกชื่อช่าง --</option>';
     techs.forEach(function(t) {
       var opt = document.createElement('option');
-      opt.value = t;
-      opt.text = t;
+      opt.value = t; opt.text = t;
       selT.appendChild(opt);
     });
 
@@ -141,16 +230,20 @@
       document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
     }
 
+    // ส่งข้อมูล
     document.getElementById('salvageForm').addEventListener('submit', function(e) {
       e.preventDefault();
       var btn = document.getElementById('btnSubmit');
       btn.disabled = true;
       btn.innerText = '⏳ กำลังบันทึกข้อมูล...';
 
+      var partIdx = document.getElementById('partSelect').value;
+      var selectedPart = partsCatalog[partIdx] || { cat: "-", name: "-" };
+
       var data = {
         donorMachine: document.getElementById('donorMachine').value,
-        catalogueNo: document.getElementById('catalogueNo').value,
-        partName: document.getElementById('partName').value,
+        catalogueNo: selectedPart.cat,
+        partName: selectedPart.name,
         qty: document.getElementById('qty').value,
         destinationType: document.getElementById('destinationType').value,
         targetMachine: document.getElementById('targetMachine').value,
@@ -170,7 +263,7 @@
         document.getElementById('salvageForm').style.display = 'none';
         document.getElementById('successBox').style.display = 'block';
       }).catch(function(err) {
-        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + err);
+        alert("เกิดข้อผิดพลาด: " + err);
         btn.disabled = false;
         btn.innerText = '💾 บันทึกข้อมูลขึ้นระบบ';
       });
