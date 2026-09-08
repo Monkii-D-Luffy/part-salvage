@@ -90,7 +90,7 @@
         <select id="targetMachine"></select>
       </div>
 
-      <!-- เลขที่ใบงานซ่อม (WO No.) -->
+      <!-- เลขที่ใบงานซ่อม -->
       <div class="form-group" id="targetWoGroup">
         <label>เลขที่ใบงานซ่อม (WO No. / BMM No.)</label>
         <input type="text" id="targetWo" placeholder="เช่น BMM26-XXXX หรือ WO26XXXX">
@@ -220,72 +220,4 @@
 
     // สร้าง Dropdown เครื่องปลายทาง
     var selTM = document.getElementById('targetMachine');
-    selTM.innerHTML = '<option value="">-- เลือกเครื่องปลายทาง --</option>';
-    targetMachines.forEach(function(m) {
-      var opt = document.createElement('option');
-      opt.value = m; opt.text = m;
-      selTM.appendChild(opt);
-    });
-
-    // สร้าง Dropdown ช่าง
-    var selT = document.getElementById('technicianName');
-    selT.innerHTML = '<option value="">-- เลือกชื่อช่างผู้ถอด --</option>';
-    for (var group in technicianGroups) {
-      var optGroup = document.createElement('optgroup');
-      optGroup.label = "🏢 " + group;
-      technicianGroups[group].forEach(function(name) {
-        var opt = document.createElement('option');
-        opt.value = name; opt.text = "👤 " + name;
-        optGroup.appendChild(opt);
-      });
-      selT.appendChild(optGroup);
-    }
-
-    function toggleDestination() {
-      var type = document.getElementById('destinationType').value;
-      document.getElementById('targetMachineGroup').style.display = type === 'CABINET' ? 'none' : 'block';
-      document.getElementById('targetWoGroup').style.display = type === 'CABINET' ? 'none' : 'block';
-      document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
-    }
-
-    // บันทึกข้อมูล
-    document.getElementById('salvageForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var btn = document.getElementById('btnSubmit');
-      btn.disabled = true;
-      btn.innerText = '⏳ กำลังบันทึกข้อมูล...';
-
-      var partIdx = document.getElementById('partSelect').value;
-      var selectedPart = partsList[partIdx] || { cat: "-", name: "-" };
-
-      var data = {
-        donorMachine: document.getElementById('donorMachine').value,
-        catalogueNo: selectedPart.cat,
-        partName: selectedPart.name,
-        qty: document.getElementById('qty').value,
-        destinationType: document.getElementById('destinationType').value,
-        targetMachine: document.getElementById('targetMachine').value,
-        targetWo: document.getElementById('targetWo').value,
-        cabinetLocation: document.getElementById('cabinetLocation').value,
-        technicianName: document.getElementById('technicianName').value
-      };
-
-      var scriptUrl = "https://script.google.com/macros/s/AKfycby1hBdguY0mGtpsUvoxt2DaJHx4eH6hiZFsbBOfrxKmzqDCHKs8e_DBiyuVvc_BIstg/exec";
-
-      fetch(scriptUrl, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      }).then(function() {
-        document.getElementById('salvageForm').style.display = 'none';
-        document.getElementById('successBox').style.display = 'block';
-      }).catch(function(err) {
-        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + err);
-        btn.disabled = false;
-        btn.innerText = '💾 บันทึกข้อมูลขึ้นระบบ';
-      });
-    });
-  </script>
-</body>
-</html>
+    selTM
