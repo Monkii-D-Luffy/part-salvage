@@ -33,7 +33,7 @@
     <div class="header">
       <h3>📋 แบบบันทึกถอดอะไหล่ Inactive</h3>
       <p>CMMS Maintenance Machine Part Salvage</p>
-      <div class="badge-donor" id="donorBadge">เครื่อง: -</div>
+      <div class="badge-donor" id="donorBadge">เครื่อง: RX1-CG-SF-10</div>
     </div>
 
     <div id="successBox" class="success-box">
@@ -47,7 +47,6 @@
       <div class="form-group">
         <label>📍 1. เครื่องจักรต้นทางที่ถูกถอด (Donor Machine) *</label>
         <select id="donorMachine" required onchange="onDonorChange()">
-          <option value="">-- เลือกเครื่องต้นทาง --</option>
           <option value="RX1-CG-SF-10">RX1-CG-SF-10</option>
           <option value="RX1-CG-SF-11">RX1-CG-SF-11</option>
           <option value="RX1-CG-SF-12">RX1-CG-SF-12</option>
@@ -90,4 +89,181 @@
         <label>🔧 2. รหัสและชื่ออะไหล่ที่ถอด (Part Catalogue) *</label>
         <select id="partSelect" required onchange="onPartChange()">
           <option value="">-- แตะเลือกอะไหล่ที่ถอด --</option>
-          <option value="0">SF.CG-CS-VFT-004 : COLLET
+          <option value="0">SF.CG-CS-VFT-004 : COLLET CHUCK 12 LEAF STD FOR VFT</option>
+          <option value="1">SF.CG-CS-VFT-002 : COLLET CHUCK 12 LEAF CARBIDE FOR VFT</option>
+          <option value="2">SF.CG-CS-VFT-001 : CHUCK BODY VFT-ORBIT</option>
+          <option value="3">SF.CG-TOOL-001 : MILLING TOOL PCD D60</option>
+          <option value="4">SF.MB-VALVE-001 : SOLENOID VALVE 5/2 WAY SMC</option>
+          <option value="5">SF.MB-CYL-002 : CLAMPING CYLINDER FESTO</option>
+          <option value="6">SF.PMP-PAD-001 : POLISHING PAD CARRIER CCP</option>
+          <option value="7">SF.GEN-SENSOR-001 : PROXIMITY SENSOR OMRON</option>
+          <option value="8">OTHER-PART : อะไหล่อื่นๆ (ระบุในใบงาน)</option>
+        </select>
+
+        <div id="partPreviewBox" class="part-preview-box">
+          <img id="partPreviewImg" class="part-preview-img" src="" alt="Part Preview">
+          <div id="partPreviewDesc" class="part-preview-desc"></div>
+        </div>
+      </div>
+
+      <!-- 3. จำนวน -->
+      <div class="form-group">
+        <label>🔢 3. จำนวนที่ถอด (Qty) *</label>
+        <select id="qty" required>
+          <option value="1">1 ชิ้น (PCS)</option>
+          <option value="2">2 ชิ้น (PCS)</option>
+          <option value="3">3 ชิ้น (PCS)</option>
+          <option value="4">4 ชิ้น (PCS)</option>
+          <option value="5">5 ชิ้น (PCS)</option>
+          <option value="10">10 ชิ้น (PCS)</option>
+        </select>
+      </div>
+
+      <!-- 4. ปลายทาง -->
+      <div class="form-group">
+        <label>🎯 4. นำไปใช้งานที่ไหน *</label>
+        <select id="destinationType" onchange="toggleDestination()">
+          <option value="INSTALL">ใส่เครื่องจักรใช้งานทันที (Active Machine)</option>
+          <option value="CABINET">เก็บเข้าตู้ Stock / ตู้สแปร์ (Spare Cabinet)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="targetMachineGroup">
+        <label>เครื่องจักรปลายทาง (Target Machine)</label>
+        <select id="targetMachine">
+          <option value="">-- เลือกเครื่องปลายทาง --</option>
+          <option value="RX1-CG-SF-01">RX1-CG-SF-01</option>
+          <option value="RX1-CG-SF-02">RX1-CG-SF-02</option>
+          <option value="RX1-CG-SF-03">RX1-CG-SF-03</option>
+          <option value="RX1-CG-SF-04">RX1-CG-SF-04</option>
+          <option value="RX1-CG-SF-05">RX1-CG-SF-05</option>
+          <option value="RX1-CG-SF-06">RX1-CG-SF-06</option>
+          <option value="RX1-CG-SF-07">RX1-CG-SF-07</option>
+          <option value="RX1-CG-SF-08">RX1-CG-SF-08</option>
+          <option value="RX1-MBLOCK-SF-01">RX1-MBLOCK-SF-01</option>
+          <option value="RX1-MBLOCK-SF-02">RX1-MBLOCK-SF-02</option>
+          <option value="RX2-CG-SF-21">RX2-CG-SF-21</option>
+          <option value="RX2-CG-SF-22">RX2-CG-SF-22</option>
+          <option value="RX2-PMP-SF-03">RX2-PMP-SF-03</option>
+          <option value="เครื่องอื่นๆ">เครื่องอื่นๆ (ระบุใน WO)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="targetWoGroup">
+        <label>เลขที่ใบงานซ่อม (WO No. / BMM No.)</label>
+        <input type="text" id="targetWo" placeholder="เช่น BMM26-XXXX หรือ WO26XXXX">
+      </div>
+
+      <div class="form-group" id="cabinetLocationGroup" style="display:none;">
+        <label>เลือกตู้จัดเก็บ (Cabinet Location)</label>
+        <select id="cabinetLocation">
+          <option value="ตู้ Spare A (RX1)">ตู้ Spare A (RX1)</option>
+          <option value="ตู้ Spare B (RX1)">ตู้ Spare B (RX1)</option>
+          <option value="ตู้ Spare Main (RX2)">ตู้ Spare Main (RX2)</option>
+          <option value="ตู้ชั้นวางอะไหล่ถอดรอตรวจ">ตู้ชั้นวางอะไหล่ถอดรอตรวจ</option>
+        </select>
+      </div>
+
+      <!-- 5. ช่างผู้ถอด -->
+      <div class="form-group">
+        <label>👤 5. ช่างผู้ถอดอะไหล่ (Technician) *</label>
+        <select id="technicianName" required>
+          <option value="">-- เลือกชื่อช่างผู้ถอด --</option>
+          <optgroup label="🏢 Site: RX1-Surface">
+            <option value="BUNTAN MANJIT">👤 BUNTAN MANJIT</option>
+            <option value="CHAIPICHIT LEUSAN">👤 CHAIPICHIT LEUSAN</option>
+            <option value="CHATREE CHANKASEM">👤 CHATREE CHANKASEM</option>
+            <option value="CHUKIAT PIKULKAW">👤 CHUKIAT PIKULKAW</option>
+            <option value="KITTISAK TAWEE">👤 KITTISAK TAWEE</option>
+            <option value="SOMCHAI JAIDEE">👤 SOMCHAI JAIDEE</option>
+            <option value="NANTASIT KAEWMEESEE">👤 NANTASIT KAEWMEESEE</option>
+          </optgroup>
+          <optgroup label="🏢 Site: RX2-Surface">
+            <option value="AMARIN SRIPARN">👤 AMARIN SRIPARN</option>
+            <option value="CHARIN PUEK-NGAM">👤 CHARIN PUEK-NGAM</option>
+            <option value="CHATCHAWAN PUNYARAT">👤 CHATCHAWAN PUNYARAT</option>
+            <option value="DAW WANNAKAN">👤 DAW WANNAKAN</option>
+            <option value="DOKRANG NOYNA">👤 DOKRANG NOYNA</option>
+          </optgroup>
+          <optgroup label="🏢 Site: RX3-Surface">
+            <option value="ADISORN JIT-AKA">👤 ADISORN JIT-AKA</option>
+            <option value="EKKALUCK WANGSEWKLANG">👤 EKKALUCK WANGSEWKLANG</option>
+            <option value="PANJA PAKKOTANANG">👤 PANJA PAKKOTANANG</option>
+            <option value="PONGSAK TIPPANAS">👤 PONGSAK TIPPANAS</option>
+            <option value="PRASERT AEAMJIT">👤 PRASERT AEAMJIT</option>
+          </optgroup>
+          <optgroup label="🏢 แผนก TINT">
+            <option value="CHAMNAN NANUDORN">👤 CHAMNAN NANUDORN</option>
+            <option value="CHARAN THAPPAN">👤 CHARAN THAPPAN</option>
+            <option value="NATTAPHON PHONHAN">👤 NATTAPHON PHONHAN</option>
+            <option value="SURIYAPONG CHAIYA">👤 SURIYAPONG CHAIYA</option>
+            <option value="TOSSAPON WONGCHANTEUK">👤 TOSSAPON WONGCHANTEUK</option>
+          </optgroup>
+          <optgroup label="🏢 แผนก HELP & FINAL">
+            <option value="ANUCHIT YOLAO">👤 ANUCHIT YOLAO</option>
+            <option value="APISIT PRATUMWONG">👤 APISIT PRATUMWONG</option>
+            <option value="APIWATT PRABUNREUNG">👤 APIWATT PRABUNREUNG</option>
+            <option value="NOPPON HOMSUK">👤 NOPPON HOMSUK</option>
+            <option value="PAPHAWIN CHUAPHEANG">👤 PAPHAWIN CHUAPHEANG</option>
+            <option value="KITTI SOMSRI">👤 KITTI SOMSRI</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <button type="submit" class="btn" id="btnSubmit">💾 บันทึกข้อมูลขึ้นระบบ</button>
+    </form>
+  </div>
+
+  <script>
+    var partsList = [
+      { cat: "SF.CG-CS-VFT-004", name: "COLLET CHUCK 12 LEAF STD FOR VFT", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=COLLET+CHUCK+12+LEAF" },
+      { cat: "SF.CG-CS-VFT-002", name: "COLLET CHUCK 12 LEAF CARBIDE FOR VFT", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=COLLET+CHUCK+CARBIDE" },
+      { cat: "SF.CG-CS-VFT-001", name: "CHUCK BODY VFT-ORBIT", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=CHUCK+BODY+VFT" },
+      { cat: "SF.CG-TOOL-001", name: "MILLING TOOL PCD D60", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=MILLING+TOOL+PCD+D60" },
+      { cat: "SF.MB-VALVE-001", name: "SOLENOID VALVE 5/2 WAY SMC", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=SOLENOID+VALVE+SMC" },
+      { cat: "SF.MB-CYL-002", name: "CLAMPING CYLINDER FESTO", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=CLAMPING+CYLINDER+FESTO" },
+      { cat: "SF.PMP-PAD-001", name: "POLISHING PAD CARRIER CCP", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=POLISHING+PAD+CARRIER" },
+      { cat: "SF.GEN-SENSOR-001", name: "PROXIMITY SENSOR OMRON", img: "https://dummyimage.com/350x200/0f172a/38bdf8.png&text=PROXIMITY+SENSOR+OMRON" },
+      { cat: "OTHER-PART", name: "อะไหล่อื่นๆ (ระบุในใบงาน)", img: "" }
+    ];
+
+    var urlParams = new URLSearchParams(window.location.search);
+    var preselectedDonor = urlParams.get('donor') || '';
+
+    var selD = document.getElementById('donorMachine');
+    if (preselectedDonor && selD.querySelector('option[value="' + preselectedDonor + '"]')) {
+      selD.value = preselectedDonor;
+      document.getElementById('donorBadge').innerText = "เครื่อง: " + preselectedDonor;
+    }
+
+    function onDonorChange() {
+      var val = selD.value;
+      document.getElementById('donorBadge').innerText = val ? ("เครื่อง: " + val) : "เครื่อง: -";
+    }
+
+    function onPartChange() {
+      var idx = document.getElementById('partSelect').value;
+      var previewBox = document.getElementById('partPreviewBox');
+      var previewImg = document.getElementById('partPreviewImg');
+      var previewDesc = document.getElementById('partPreviewDesc');
+
+      if (idx !== "" && partsList[idx]) {
+        var p = partsList[idx];
+        previewDesc.innerText = p.cat + " — " + p.name;
+        previewImg.src = p.img || ("https://dummyimage.com/350x200/0f172a/38bdf8.png&text=" + encodeURIComponent(p.cat));
+        previewBox.style.display = 'block';
+      } else {
+        previewBox.style.display = 'none';
+      }
+    }
+
+    function toggleDestination() {
+      var type = document.getElementById('destinationType').value;
+      document.getElementById('targetMachineGroup').style.display = type === 'CABINET' ? 'none' : 'block';
+      document.getElementById('targetWoGroup').style.display = type === 'CABINET' ? 'none' : 'block';
+      document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
+    }
+
+    document.getElementById('salvageForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('btnSubmit');
