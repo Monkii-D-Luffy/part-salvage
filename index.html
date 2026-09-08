@@ -18,7 +18,7 @@
     input, select { width: 100%; padding: 11px 13px; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; color: #ffffff; font-size: 14px; outline: none; }
     input:focus, select:focus { border-color: #38bdf8; background: #1e293b; }
     .btn { width: 100%; background: #0284c7; color: white; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    .btn:disabled { background: #475569; }
+    .btn:disabled { background: #475569; cursor: not-allowed; }
     .success-box { display: none; text-align: center; padding: 25px 15px; background: #064e3b; border-radius: 12px; color: #6ee7b7; border: 1px solid #059669; }
   </style>
 </head>
@@ -27,7 +27,7 @@
     <div class="header">
       <h3>📋 แบบบันทึกถอดอะไหล่ Inactive</h3>
       <p>CMMS Maintenance Machine Part Salvage</p>
-      <div class="badge-donor" id="donorBadge">กำลังโหลดข้อมูล...</div>
+      <div class="badge-donor" id="donorBadge">กำลังโหลด...</div>
     </div>
 
     <div id="successBox" class="success-box">
@@ -90,7 +90,6 @@
   </div>
 
   <script>
-    // 34 เครื่องจักร Inactive
     var machines = [
       'RX1-CG-SF-10', 'RX1-CG-SF-11', 'RX1-CG-SF-12', 'RX1-CG-SF-13', 'RX1-CG-SF-14',
       'RX1-CG-SF-15', 'RX1-CG-SF-18', 'RX1-CG-SF-36', 'RX1-CG-SF-37', 'RX1-CG-SF-38',
@@ -102,17 +101,14 @@
       'RX2-PMP-SF-06', 'RXE-ABLOCK-SF-01'
     ];
 
-    // รายชื่อช่างหน้างาน
     var techs = [
       'SOMCHAI JAIDEE', 'NANTASIT KAEWMEESEE', 'ANUCHIT YOLAO', 'KITTI SOMSRI', 
       'RATTANAT', 'AEED', 'ART', 'PIE', 'TEEE'
     ];
 
-    // อ่านค่า ?donor= จาก URL
     var urlParams = new URLSearchParams(window.location.search);
     var preselectedDonor = urlParams.get('donor') || '';
 
-    // สร้าง Dropdown เครื่อง
     var selM = document.getElementById('donorMachine');
     selM.innerHTML = '<option value="">-- เลือกเครื่องจักร --</option>';
     machines.forEach(function(m) {
@@ -129,7 +125,6 @@
       document.getElementById('donorBadge').innerText = this.value ? ("เครื่อง: " + this.value) : "กรุณาเลือกเครื่อง";
     });
 
-    // สร้าง Dropdown ช่าง
     var selT = document.getElementById('technicianName');
     selT.innerHTML = '<option value="">-- เลือกชื่อช่าง --</option>';
     techs.forEach(function(t) {
@@ -146,7 +141,6 @@
       document.getElementById('cabinetLocationGroup').style.display = type === 'CABINET' ? 'block' : 'none';
     }
 
-    // ฟังก์ชันส่งข้อมูลไปยัง Google Apps Script
     document.getElementById('salvageForm').addEventListener('submit', function(e) {
       e.preventDefault();
       var btn = document.getElementById('btnSubmit');
